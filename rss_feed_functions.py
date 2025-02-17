@@ -213,7 +213,7 @@ def check_events_in_dataframe(df, event_dict):
 
    
 
-def monitor_listed_events_for_update_and_send(url, event_dict, release_time_str, release_buffer):
+def monitor_listed_events_for_update_and_send(url, event_dict, release_time_str, release_buffer, file_path):
     # Create a session object
     session = requests.Session()
     
@@ -265,7 +265,6 @@ def monitor_listed_events_for_update_and_send(url, event_dict, release_time_str,
                 time.sleep(polling_interval)  # Wait before retrying
 
         # Write all events to file
-        file_path = "C:/Users/USER/AppData/Roaming/MetaQuotes/Terminal/91DD9F8C3ED3720A3F71FC024EC6B483/MQL4/Files/newsData.csv"
         with open(file_path, "w", newline="") as file:
             csv_writer = csv.writer(file)
             #csv_writer.writerow(["Event", "Previous", "Consensus", "Actual", "Invert_statistic", "Num_events"])
