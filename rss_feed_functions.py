@@ -76,22 +76,24 @@ def rssFeed_events_to_dataframe(url):
 
 
 # Function to extract specific/multiple data for an event(s) saved in a dataframe
-def extract_listed_events_data_DF(df, event_tuple_list, data_type_list):
+def extract_listed_events_data_DF(df, event_index_list, data_type_list):
     dict = {}
     
     # Loop through each event
-    for event_tuple in event_tuple_list:
-        # Unpack the event tuple separating the event title from the boolean of statistic inversion
-        event_title, invert_statistic, symbol = event_tuple
+    for event_index in event_index_list:
+        # Select the row and ensure it's not empty
+        event_row = df.iloc[event_index]
+
+        if event_row.empty:
+            return f"No even found with at index: {event_index}"
+
+        # Get the event title and deduce whether the statistic would be inverse
+        event_title = df.at[event_index, "Title"]
+        invert_statistic = "unemployment" in event_title.lower()
         
         # Loop through the required data types
         for data_type in data_type_list:
-            # Filter the DataFrame to match the event title
-            event_row = df[df['Title'].str.contains(event_title, case=False, na=False)]
-            
-            if event_row.empty:
-                return f"No event found with the title: {event_title}"
-            
+           
             # Check if the requested data type is valid
             if data_type not in df.columns.tolist():
                 return f"Invalid data type requested: {data_type}. Choose from 'Previous', 'Consensus', or 'Actual'."
