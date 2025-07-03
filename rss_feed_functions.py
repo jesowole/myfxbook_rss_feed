@@ -82,34 +82,39 @@ def extract_listed_events_data_DF(df, event_index_list, data_type_list):
     
     # Loop through each event
     for event_index in event_index_list:
-        # Select the row and ensure it's not empty
-        event_row = df.iloc[event_index]
-
-        if event_row.empty:
-            return f"No even found with at index: {event_index}"
+        # Check index bounds
+        if event_index >= len(df):
+            return f"Index {event_index} is out of bounds."
 
         # Get the event title and deduce whether the statistic would be inverse
-        event_title = df.at[event_index, "Title"]
+        event_row = df.iloc[event_index]
+        event_title = event_row["Title"]
         invert_statistic = "unemployment" in event_title.lower()
+
+        # Initialize sub-dict if not already
+        if event_title not in dict:
+            dict[event_title] = {}
         
         # Loop through the required data types
         for data_type in data_type_list:
            
             # Check if the requested data type is valid
-            if data_type not in df.columns.tolist():
+            if data_type not in df.columns:
                 return f"Invalid data type requested: {data_type}. Choose from 'Previous', 'Consensus', or 'Actual'."
             
             # Extract the specific data (Previous, Consensus, Actual)
-            result = event_row.iloc[0][data_type]  # Getting the first match
-
-            if event_title not in dict:
-                dict[event_title] = {}
+            result = event_row[data_type]  # Getting the first match
             
             # Strip the returned value of any non-numerical
             dict[event_title][data_type] = strip_symbols(result)
         dict[event_title]["Invert_statistic"] = invert_statistic
 
     return dict
+
+
+
+def strip_symbols(value):
+    return re.sub(r"[^\d\.-]", "", str(value))
 
 
 
@@ -129,11 +134,6 @@ def wait_until_event(release_time_str, release_buffer):
     print(f"Sleeping for {time_diff.total_seconds()} seconds until {release_buffer} seconds before the event...")
     return time_diff.total_seconds()
   
-
-
-def strip_symbols(value):
-    return re.sub(r"[^\d\.-]", "", str(value))
-
 
 
 def fetch_rss_feed(session, url):
@@ -163,7 +163,7 @@ def fetch_rss_feed(session, url):
 
 
 
-def extract_actual_value(description, symbol):
+def extract_actual_value(description):
     # Parse the HTML content using BeautifulSoup
     soup = BeautifulSoup(description, "html.parser")
     
@@ -181,7 +181,7 @@ def extract_actual_value(description, symbol):
         # Ensure that there are enough cells to extract the 'Actual' value
         if len(cells) >= 5:
             actual_value = cells[4].text.strip()  # Extract the 'Actual' value from the 5th cell (index 4)
-            return strip_symbols(symbol, actual_value) if actual_value else None  # Return the actual value or None if it's empty
+            return strip_symbols(actual_value) if actual_value else None  # Return the actual value or None if it's empty
     
     # Return None if the 'Actual' value could not be found
     return None
@@ -196,14 +196,13 @@ def check_events_in_dataframe(df, event_dict):
         previous = event_data["Previous"]
         consensus = event_data["Consensus"]
         invert_stat = event_data["Invert_statistic"]
-        symbol = event_data["Strip_symbol"]
 
         # Extract the event description for this event from the DataFrame
         df_filtered = df[df['title'].str.contains(event_title, case=False, na=False)]
         
         if not df_filtered.empty:
             description = df_filtered.iloc[0]['description']  # Description of the first match
-            actual = extract_actual_value(description, symbol)
+            actual = extract_actual_value(description)
             
             # Append event details, including the number of events
             events_data.append([event_title, previous, consensus, actual, invert_stat, num_events])
