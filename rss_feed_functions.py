@@ -1,4 +1,5 @@
 #import pertinent libraries
+import re
 import csv
 import time
 import requests
@@ -105,9 +106,8 @@ def extract_listed_events_data_DF(df, event_index_list, data_type_list):
                 dict[event_title] = {}
             
             # Strip the returned value of any non-numerical
-            dict[event_title][data_type] = strip_symbols(symbol, result)
+            dict[event_title][data_type] = strip_symbols(result)
         dict[event_title]["Invert_statistic"] = invert_statistic
-        dict[event_title]["Strip_symbol"] = symbol
 
     return dict
 
@@ -131,8 +131,8 @@ def wait_until_event(release_time_str, release_buffer):
   
 
 
-def strip_symbols(symbol, value):
-    return value.replace(symbol, "").strip()
+def strip_symbols(value):
+    return re.sub(r"[^\d\.-]", "", str(value))
 
 
 
